@@ -1,6 +1,8 @@
-### INSTALL DJANGO
+### DEPENDENCIES
 
-python -m pip install Django
+pip install Django
+
+pip install openai
 
 ### TO RUN the project :
 
