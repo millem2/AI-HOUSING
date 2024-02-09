@@ -4,6 +4,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
+import numpy as np
 
 load_dotenv()
 
@@ -31,3 +32,13 @@ def get_embedding(
     # print(response)
 
     return response.data[0].embedding
+
+
+def get_cosinus_diference(vector1, vector2):
+    vector1 = np.array(vector1, dtype=float)
+    vector2 = np.array(vector2, dtype=float)
+
+    cosinus = np.dot(vector1, vector2) / (
+        np.linalg.norm(vector1) * np.linalg.norm(vector2)
+    )
+    return cosinus
