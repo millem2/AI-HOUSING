@@ -37,18 +37,30 @@ df["embedding"] = df["embedding"].apply(lambda x: ast.literal_eval(x))
 X_searchedHouse = np.array(df.head(1)["embedding"].values[0])
 
 # Appliquer la fonction get_cosinus_diference entre la première ligne et toutes les autres
-C = (
+similarities = (
     df["embedding"]
     .apply(lambda x: get_cosinus_diference(X_searchedHouse, np.array(x)))
     .to_frame("cosine_similarity")
 )
 
+print("similarities", similarities.shape)
 
 # Ajouter la colonne cosine_similarity au dataframe
-results_df = pd.concat([df, C], axis=1)
+results_df = pd.concat([df, similarities], axis=1)
 
 # Trier le dataframe par cosine_similarity
 results_df = results_df.sort_values(by="cosine_similarity", ascending=False)
 # Enregistrer le dataframe dans un fichier CSV
 # results_df.to_csv("./se_loger_embeddings_with_similarity_with_first_one.csv")
 results_df.to_excel("./se_loger_embeddings_with_similarity_with_first_one.xlsx")
+
+num_rows = len(results_df)
+
+
+# Itérer sur les indices de 0 à num_rows - 1
+
+median = np.median(similarities.cosine_similarity)
+print("mediane de similarité", median)
+
+average = np.mean(similarities.cosine_similarity)
+print("moyenne de similarité", average)
