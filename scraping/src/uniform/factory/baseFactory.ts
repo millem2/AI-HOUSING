@@ -37,7 +37,9 @@ export abstract class BaseFactory<T extends object> {
     }
 
     // Add the new data to the existing data
-    existingData.push(data);
+    if (Array.isArray(data)) {
+      existingData.push(...data);
+    }
 
     // Write the updated data back to the JSON file
     fs.writeFileSync(this.destFileName, JSON.stringify(existingData, null, 2), "utf-8");
@@ -53,11 +55,6 @@ export abstract class BaseFactory<T extends object> {
       console.log("data size : ", existingData.length);
 
       const newDataArray = [];
-
-      //if existingData contains multiple arrays, we flatten it
-      if (Array.isArray(existingData[0])) {
-        existingData = existingData.flat();
-      }
 
       console.log("data size 2 : ", existingData.length);
 
