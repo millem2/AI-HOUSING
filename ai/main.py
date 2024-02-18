@@ -16,8 +16,9 @@ df = pd.read_json(input_datapath)
 print(df.head())
 
 # This may take a few minutes
-df["embedding"] = df.short_description.apply(
+df["embedding"] = df.description.apply(
     lambda x: get_embedding(x, model=embedding_model)
 )
 df.to_csv("./finalDatas_embeddings.csv")
 df.to_excel("./finalDatas_embeddings.xlsx")
+df.to_json("./finalDatas_embeddings.json")

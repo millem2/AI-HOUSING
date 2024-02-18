@@ -1,10 +1,10 @@
 import os
 from typing import List, Optional
 
+import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-import numpy as np
 
 load_dotenv()
 
@@ -23,7 +23,6 @@ def get_embedding(
     global count
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
-    print(f"Getting embedding for: {text}")
 
     response = client.embeddings.create(input=[text], model=model, **kwargs)
     count += 1
