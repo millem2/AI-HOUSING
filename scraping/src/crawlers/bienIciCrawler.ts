@@ -3,7 +3,7 @@ import { Configuration, Dataset, PlaywrightCrawler } from "crawlee";
 export const DATASET_NAME = "bien_ici";
 export const EXPORT_FILE_NAME = "bien_ici_datas_18_02_24";
 
-interface BienIciData {
+export interface BienIciData {
   title: string;
   url: string;
   description: string;
