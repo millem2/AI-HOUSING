@@ -75,7 +75,8 @@ export class SelogerFactory extends BaseFactory<old_seloger_data> {
     return {
       title: data.title,
       url: data.url,
-      description: data.description,
+      // if description is not an empty string, we keep it, else we take the short description
+      description: data.description !== "" ? data.description : data.short_description,
       // split the string into an array and erase the space :
       photos: data.photos.split(",").map((photo) => photo.trim()),
       price: data.price,
