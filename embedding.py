@@ -8,8 +8,8 @@ model_ckpt = "nateraw/vit-base-beans"
 processor = AutoImageProcessor.from_pretrained(model_ckpt)
 model = AutoModel.from_pretrained(model_ckpt)
 
-# Charger les images (vous pouvez remplacer ces chemins par vos propres images)
-image_a_traiter = "image_a_traiter/0kk3lh2o9i78bd48hor1771m10bjlxlttlkefza8w.jpg"
+# Charger  la première image du dossier "image_a_traiter", on ne connait pas le nom de l'image
+image_a_traiter = "image_a_traiter/" + os.listdir("image_a_traiter")[0]
 image1 = Image.open(image_a_traiter)
 image1.show()
 inputs1 = processor(images=image1, return_tensors="pt")
