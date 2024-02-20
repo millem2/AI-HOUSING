@@ -13,7 +13,8 @@ image_a_traiter = "image_a_traiter/" + os.listdir("image_a_traiter")[0]
 image1 = Image.open(image_a_traiter)
 image1.show()
 inputs1 = processor(images=image1, return_tensors="pt")
-# Chemin vers les autres images à comparer
+# dossier de sauvegarde des embeddings
+dossier_calcul_embedding = "save_embedding"
 
 # liste des images dans le dossier "photos"
 j = os.listdir("image")
@@ -27,16 +28,26 @@ for i in j:
     with torch.no_grad():
         embeddings1 = model(**inputs1).last_hidden_state.mean(dim=1)
         embeddings2 = model(**inputs_acomparer).last_hidden_state.mean(dim=1)
+
+    # Créer un dossier pour stocker les embeddings
+    os.makedirs(dossier_calcul_embedding, exist_ok=True)
+
+    # Chemin vers le fichier d'embedding
+    chemin_embedding = os.path.join(dossier_calcul_embedding, f"{i}.pt")
+    torch.save(embeddings2, chemin_embedding)
+    print(f"Embedding de {image2} sauvegardé dans {chemin_embedding}")
+
     # Calculer la similarité cosinus
     similarity_score = torch.nn.functional.cosine_similarity(
         embeddings1, embeddings2
     ).item()
+
     print(f"Similarité entre les images : {similarity_score:.4f}")
     # si la similarité est supérieur à 0.6, on plot l'image
-
     if similarity_score > 0.6:
         print("Similarité entre les images : {similarity_score:.4f}")
         print("les images sont similaires")
         image2.show()
     else:
         print("les images ne sont pas similaires")
+    print("fin du programme")
