@@ -1,6 +1,7 @@
 import pandas as pd
 import tiktoken
-from utils import get_embedding
+
+# from utils import get_embedding
 
 # embedding model parameters
 embedding_model = "text-embedding-3-small"
@@ -14,6 +15,7 @@ df = pd.read_json(input_datapath)
 #     "Title: " + df.libelle.str.strip() + "; Presentation: " + df.presentation.str.strip()
 # )
 print(df.head())
+
 
 # This may take a few minutes
 df["embedding"] = df.description.apply(
