@@ -26,6 +26,11 @@ export default defineConfig({
   theme: {
     extend: {},
   },
+  conditions: {
+    extend: {
+      status: "&:where([data-status])",
+    },
+  },
 
   // The output directory for your css system
   outdir: "styled-system",
