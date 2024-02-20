@@ -1,16 +1,29 @@
+import sys
 from typing import Union
 
-
-import sys
-
-
-from utils import get_houses_similar_to_label, get_housing_from_image
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from utils import get_houses_similar_to_label, get_housing_from_image
 
 app = FastAPI()
 
+origins = ["http://localhost:5173/", "http://localhost", "*"]
 
-@app.get("/housingFromText/")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=[""],
+    allow_headers=[""],
+)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+@app.post("/housingFromText/")
 def get_housingFromText(label: str):
     return get_houses_similar_to_label(label)
 

@@ -1,16 +1,16 @@
+import ast
 import os
 from typing import List, Optional
-import torch
-import os
-from transformers import AutoImageProcessor, AutoModel
-from fastapi import File, UploadFile
-from PIL import Image
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import torch
 from dotenv import load_dotenv
+from fastapi import File, UploadFile
 from openai import OpenAI
+from PIL import Image
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-import ast
+from transformers import AutoImageProcessor, AutoModel
 
 load_dotenv()
 
@@ -55,11 +55,13 @@ def get_houses_similar_to_label(label: str):
 
     # Convertir les chaînes de caractères en listes
     df["embedding"] = df["embedding"].apply(lambda x: ast.literal_eval(x))
+    print("df")
 
     # Sélectionner la première ligne comme vecteur de référence
-    X_searchedHouse = get_embedding(label)
+    X_searchedHouse = get_embedding(label, "text-embedding-3-small")
+    print("X_searchedHouse", X_searchedHouse)
 
-    # Appliquer la fonction get_cosinus_diference entre la première ligne et toutes les autres
+    # Appliquer la fonction get_cosinus_diference entre la première zligne et toutes les autres
     similarities = (
         df["embedding"]
         .apply(lambda x: get_cosinus_diference(X_searchedHouse, np.array(x)))
@@ -74,19 +76,20 @@ def get_houses_similar_to_label(label: str):
     # Trier le dataframe par cosine_similarity
     results_df = results_df.sort_values(by="cosine_similarity", ascending=False)
 
+    # We remove the embedding column to avoid having a huge file
+    results_df = results_df.drop(columns=["embedding"])
+
+    # File name to save the dataframe
+    file_name = f"./results/{label}_similar_houses.csv"
+
     # Enregistrer le dataframe dans un fichier CSV
-    # results_df.to_csv("./se_loger_embeddings_with_similarity_with_first_one.csv")
-    results_df.to_excel("./se_loger_embeddings_with_similarity_with_label.xlsx")
+    results_df.to_csv(file_name)
+    # Enregistrer le dataframe dans un fichier JSON
+    results_df.reset_index().to_json(
+        f"./results/{label}_similar_houses.json", force_ascii=False, orient="records"
+    )
 
-    return results_df.to_json(force_ascii=False)
-
-    # Itérer sur les indices de 0 à num_rows - 1
-
-    median = np.median(similarities.cosine_similarity)
-    print("mediane de similarité", median)
-
-    average = np.mean(similarities.cosine_similarity)
-    print("moyenne de similarité", average)
+    return results_df.reset_index().to_json(force_ascii=False, orient="records")
 
 
 def get_housing_from_image(file: UploadFile = File(...)):
