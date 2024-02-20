@@ -19,5 +19,5 @@ A simple backend app using `flask`, to run the backend app, you need to install 
 
 ```bash
 pip install -r requirements.txt
-flask run
+uvicorn main:app --reload
 ```
