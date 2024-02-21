@@ -14,7 +14,16 @@ export const Route = createRootRoute({
           Ai housing est un outil de recherche de logement par intelligence artificielle. Veuillez entrez la description
           de votre logement de rêve pour commencer.
         </Text>
-        <HStack w="100%" paddingX="30%" justify={"space-between"}>
+        <HStack
+          w="100%"
+          paddingX="30%"
+          justify={"space-between"}
+          pos={"sticky"}
+          bg={"bg.canvas"}
+          top="0"
+          zIndex={"2"}
+          paddingY={"10px"}
+        >
           <Link asChild _status={{ fontWeight: "bold" }}>
             <RouteLink to="/">Recherche par texte</RouteLink>
           </Link>

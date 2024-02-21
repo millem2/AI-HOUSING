@@ -12,16 +12,17 @@ export const useGetTest = () => {
   return query;
 };
 
-interface IResult {
+export interface IResult {
   index: number;
   title: string;
   url: string;
   description: string;
-  photos: (string | null)[];
+  photos: string;
   price: number;
   location: string;
   surface: number;
   rooms: number;
+  cosine_similarity: number;
 }
 
 export const useSearchbyText = () => {
@@ -39,7 +40,7 @@ export const useSearchbyText = () => {
 
       console.log("response", response);
       const JSONstring = await response.json();
-      const JSONresponse = JSON.parse(JSONstring);
+      const JSONresponse: IResult = JSON.parse(JSONstring);
 
       console.log("JSON response", JSONresponse);
       // console.log("JSON response length", JSONresponse.?length);
