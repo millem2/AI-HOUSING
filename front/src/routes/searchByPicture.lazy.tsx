@@ -1,10 +1,10 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { Heading } from "~/components/ui/heading";
+import { PictureUpload } from "~/components/data-ui/pictureUpload";
 
 export const Route = createLazyFileRoute("/searchByPicture")({
   component: SearchByPicture,
 });
 
 function SearchByPicture() {
-  return <Heading className="p-2">Hello from About!</Heading>;
+  return <PictureUpload w={"lg"} />;
 }
