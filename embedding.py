@@ -50,4 +50,3 @@ for i in j:
         image2.show()
     else:
         print("les images ne sont pas similaires")
-    print("fin du programme")
