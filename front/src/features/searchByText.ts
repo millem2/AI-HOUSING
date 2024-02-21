@@ -1,16 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-export const useGetTest = () => {
-  const query = useQuery({
-    queryKey: ["test"],
-    queryFn: async () => {
-      const response = await fetch("http://127.0.0.1:8000/");
-      return response.json();
-    },
-  });
-
-  return query;
-};
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface IResult {
   index: number;
