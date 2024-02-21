@@ -30,7 +30,8 @@ def get_housingFromText(label: str):
 
 @app.post("/housingFromImage/")
 async def create_file(file: UploadFile = File(...)):
-    return get_housing_from_image(file)
+    return {"filename": file.filename}
+    # return get_housing_from_image(file)
 
 
 @app.get("/items/{item_id}")
