@@ -6,7 +6,7 @@ import requests
 csv_file_path = "api/finalDatas_embeddings.csv"
 
 # Répertoire de destination pour enregistrer les images
-output_directory = "image"
+output_directory = "image_test"
 
 # Créez le répertoire s'il n'existe pas
 if not os.path.exists(output_directory):
@@ -40,10 +40,15 @@ with open(csv_file_path, "r", encoding="utf-8") as csvfile:
             if ".jpg" in column:
                 image_urls = column.strip("[]").replace("'", "").split(", ")
                 for image_url in image_urls:
+                    # le nom de l'image doit être identique à url du fichier csv
                     image_filename = os.path.join(
                         output_directory, os.path.basename(image_url)
                     )
-                    download_image(image_url, image_filename)
+                    # verifier si l'image existe déjà
+                    if os.path.exists(image_filename):
+                        print(f"L'image {image_filename} existe déjà.")
+                    else:
+                        download_image(image_url, image_filename)
 
 
 print("Tous les fichiers .jpg ont été téléchargés avec succès !")

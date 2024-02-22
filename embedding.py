@@ -4,14 +4,14 @@ from transformers import AutoImageProcessor, AutoModel
 from PIL import Image
 
 # Charger le modèle pré-entraîné
-model_ckpt = "nateraw/vit-base-beans"
+model_ckpt = "google/vit-base-patch16-224-in21k"
 processor = AutoImageProcessor.from_pretrained(model_ckpt)
 model = AutoModel.from_pretrained(model_ckpt)
 
 # Charger  la première image du dossier "image_a_traiter", on ne connait pas le nom de l'image
 image_a_traiter = "image_a_traiter/" + os.listdir("image_a_traiter")[0]
 image1 = Image.open(image_a_traiter)
-image1.show()
+# image1.show()
 inputs1 = processor(images=image1, return_tensors="pt")
 # dossier de sauvegarde des embeddings
 dossier_calcul_embedding = "save_embedding"
@@ -47,6 +47,6 @@ for i in j:
     if similarity_score > 0.6:
         print("Similarité entre les images : {similarity_score:.4f}")
         print("les images sont similaires")
-        image2.show()
+        # image2.show()
     else:
         print("les images ne sont pas similaires")
