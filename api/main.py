@@ -3,7 +3,11 @@ from typing import Union
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from utils import get_houses_similar_to_label, get_housing_from_image
+from utils import (
+    get_houses_similar_to_label,
+    get_housing_from_image,
+    get_housing_from_first_image,
+)
 
 app = FastAPI()
 
@@ -30,6 +34,7 @@ def get_housingFromText(label: str):
 
 @app.post("/housingFromImage/")
 async def create_file(file: UploadFile = File(...)):
+    return get_housing_from_image(file)
     return {"filename": file.filename}
     # return get_housing_from_image(file)
 

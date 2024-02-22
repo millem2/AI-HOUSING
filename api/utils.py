@@ -11,6 +11,7 @@ from openai import OpenAI
 from PIL import Image
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from transformers import AutoImageProcessor, AutoModel
+from io import BytesIO
 
 load_dotenv()
 
@@ -92,62 +93,85 @@ def get_houses_similar_to_label(label: str):
     return results_df.reset_index().to_json(force_ascii=False, orient="records")
 
 
-# def get_housing_from_image(file: UploadFile = File(...)):
+async def get_housing_from_image(file: UploadFile = File(...)):
 
-#     image1 = Image.open(file)
-#     image1.show()
+    image_content = await file.read()
 
-#     # Charger le modèle pré-entraîné
-#     model_ckpt = "nateraw/vit-base-beans"
-#     processor = AutoImageProcessor.from_pretrained(model_ckpt)
-#     model = AutoModel.from_pretrained(model_ckpt)
+    # Open the image using PIL
+    image = Image.open(BytesIO(image_content))
+    image.show()
 
-#     # Charger les images (vous pouvez remplacer ces chemins par vos propres images)
-#     # image_a_traiter = "../image_a_traiter/0kk3lh2o9i78bd48hor1771m10bjlxlttlkefza8w.jpg"
-#     image1 = Image.open(file)
-#     image1.show()
-#     inputs1 = processor(images=image1, return_tensors="pt")
-#     # Chemin vers les autres images à comparer
+    # Charger le modèle pré-entraîné
+    model_ckpt = "nateraw/vit-base-beans"
+    processor = AutoImageProcessor.from_pretrained(model_ckpt)
+    model = AutoModel.from_pretrained(model_ckpt)
+    inputs1 = processor(images=image, return_tensors="pt")
+    embeddings_searched_image = model(**inputs1).last_hidden_state.mean(dim=1)
 
-#     # liste des images dans le dossier "photos"
-#     df = pd.read_csv("./finalDatas_embeddings.csv", index_col=0)
+    j = os.listdir("../save_embedding")
+    # pour chaque image dans la liste
+    similarity_scores = []
 
-#     # Créer une nouvelle colonne pour stocker les scores de similarité
-#     df["cosine_similarity"] = None
+    for i in j:
+        embedding_to_read = torch.load(f"../save_embedding/{i}")
 
-#     # Boucle sur chaque ligne du dataframe
-#     for index, row in df.iterrows():
+        similarity_scores.append(
+            (
+                torch.nn.functional.cosine_similarity(
+                    embedding_to_read, embeddings_searched_image
+                ).item(),
+                i,
+            ),
+        )
+    # Sort the similarity scores in descending order
+    similarity_scores = sorted(similarity_scores, key=lambda x: x[0], reverse=True)
 
-#         # On enlève les [] de la string contenue dans le fichier
-#         row["photos"] = row["photos"][1:-1]
+    # Keep only the top 100 similarity scores
+    top_100_similarity_scores = similarity_scores[:100]
 
-#         # On transform la string en une liste de liens pour pouvoir itérer sur les images
-#         row["photos"] = row["photos"].split(", ")
+    df = pd.read_csv("./finalDatas_embeddings.csv", index_col=0)
 
-#         # On va itérer sur chaque photo pour récupérer chaque score de similarité avec l'image de base. On stockera dans la ligne le meilleur score de similarité
-#         for i, photo_link in enumerate(row["photos"], start=1):
-#             # On charge l'image
-#             similarity_scores = []
-#             image = Image.open(photo_link)
-#             inputs_image = processor(images=image, return_tensors="pt")
-#             # On calcule les embeddings
-#             with torch.no_grad():
-#                 embeddings1 = model(**inputs1).last_hidden_state.mean(dim=1)
-#                 embeddings_image = model(**inputs_image).last_hidden_state.mean(dim=1)
-#             # Calculer la similarité cosinus
-#             similarity_scores.push(
-#                 torch.nn.functional.cosine_similarity(
-#                     embeddings1, embeddings_image
-#                 ).item()
-#             )
+    # Supprimer les lignes qui ne font pas partie des top 100 scores similaires
+    top_100_images = [score[1] for score in top_100_similarity_scores]
 
-#         # On va stocker dans la colonne cosine_similarity le meilleur score
-#         df.at[index, "cosine_similarity"] = max(similarity_scores)
+    # Créer un masque pour les lignes correspondantes
+    top_100_images = [
+        find_row_by_photo_url(df, url) for score, url in top_100_similarity_scores
+    ]
 
-#     # Maintenant on sort par cosine_similarity, et on retourne le résultat trié par ordre décroissant
-#     df = df.sort_values(by="cosine_similarity", ascending=False)
+    # top_100_images = top_100_images[1:]
 
-#     return df.to_json(force_ascii=False)
+    # Convertir la liste de lignes en DataFrame
+    # Convertir la liste de lignes en DataFrame
+    top_100_df = pd.concat(
+        [row for row in top_100_images if row is not None], ignore_index=True
+    )
+
+    # Supprimer la colonne "embedding"
+    top_100_df.drop(columns=["embedding"], inplace=True)
+
+    # print("top 100", top_100_df[0])
+
+    # Ajouter une colonne avec le cosine_similarity
+    top_100_df["cosine_similarity"] = [url for url, score in top_100_similarity_scores]
+    top_100_df = top_100_df.sort_values(by="cosine_similarity", ascending=False)
+
+    # Convertir le DataFrame en format JSON
+    return top_100_df.reset_index().to_json(force_ascii=False, orient="records")
+
+
+def find_row_by_photo_url(df, target_url):
+    # Vérifier si ".jpg" est dans la colonne "photos"
+    mask = df["photos"].apply(lambda x: target_url[:-3] in x)
+
+    # Filtrer le DataFrame en fonction du masque
+    result_df = df[mask]
+
+    # Retourner la première ligne correspondante
+    if not result_df.empty:
+        return result_df
+    else:
+        return None
 
 
 def get_housing_from_first_image():
@@ -179,59 +203,73 @@ def get_housing_from_first_image():
     # Supprimer les lignes qui ne font pas partie des top 100 scores similaires
     top_100_images = [score[1] for score in top_100_similarity_scores]
 
-    print(top_100_images)
-    # df_top_100 = df[df["URL"].isin(top_100_images)]
+    # Créer un masque pour les lignes correspondantes
+    top_100_images = [
+        find_row_by_photo_url(df, url) for score, url in top_100_similarity_scores
+    ]
 
-    # # Ajouter une nouvelle colonne "cosine_similarity" au DataFrame
-    # df_top_100["cosine_similarity"] = [score[0] for score in top_100_similarity_scores]
-    # # Afficher le DataFrame résultant
+    top_100_images = top_100_images[1:]
 
-    # return df_top_100.reset_index().to_json(force_ascii=False, orient="records")
+    # Convertir la liste de lignes en DataFrame
+    # Convertir la liste de lignes en DataFrame
+    top_100_df = pd.concat(
+        [row for row in top_100_images if row is not None], ignore_index=True
+    )
+
+    # Supprimer la colonne "embedding"
+    top_100_df.drop(columns=["embedding"], inplace=True)
+
+    # Ajouter une colonne avec le cosine_similarity
+    top_100_df["cosine_similarity"] = [url for url, score in top_100_similarity_scores]
+    top_100_df = top_100_df.sort_values(by="cosine_similarity", ascending=False)
+
+    # Convertir le DataFrame en format JSON
+    return top_100_df.reset_index().to_json(force_ascii=False, orient="records")
 
 
-def get_housing_from_image(file: UploadFile = File(...)):
-    image1 = Image.open(file)
-    image1.show()
+# def get_housing_from_image(file: UploadFile = File(...)):
+#     image1 = Image.open(file)
+#     image1.show()
 
-    # Charger le modèle pré-entraîné
-    model_ckpt = "nateraw/vit-base-beans"
-    processor = AutoImageProcessor.from_pretrained(model_ckpt)
-    model = AutoModel.from_pretrained(model_ckpt)
+#     # Charger le modèle pré-entraîné
+#     model_ckpt = "nateraw/vit-base-beans"
+#     processor = AutoImageProcessor.from_pretrained(model_ckpt)
+#     model = AutoModel.from_pretrained(model_ckpt)
 
-    inputs1 = processor(images=image1, return_tensors="pt")
-    with torch.no_grad():
-        embeddings_image = model(**inputs1).last_hidden_state.mean(dim=1)
-    j = os.listdir("../save_embedding")
-    # pour chaque image dans la liste
-    similarity_scores = []
-    for i in j:
-        embedding_to_read = torch.load(f"../save_embedding/{i}")
-        print("embedding_to_read", embedding_to_read)
-        similarity_scores.append(
-            torch.nn.functional.cosine_similarity(
-                embedding_to_read, embeddings_image
-            ).item(),
-            i,
-        )
-    # Sort the similarity scores in descending order
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[0], reverse=True)
+#     inputs1 = processor(images=image1, return_tensors="pt")
+#     with torch.no_grad():
+#         embeddings_image = model(**inputs1).last_hidden_state.mean(dim=1)
+#     j = os.listdir("../save_embedding")
+#     # pour chaque image dans la liste
+#     similarity_scores = []
+#     for i in j:
+#         embedding_to_read = torch.load(f"../save_embedding/{i}")
+#         print("embedding_to_read", embedding_to_read)
+#         similarity_scores.append(
+#             torch.nn.functional.cosine_similarity(
+#                 embedding_to_read, embeddings_image
+#             ).item(),
+#             i,
+#         )
+#     # Sort the similarity scores in descending order
+#     similarity_scores = sorted(similarity_scores, key=lambda x: x[0], reverse=True)
 
-    # Keep only the top 100 similarity scores
-    top_100_similarity_scores = similarity_scores[:100]
+#     # Keep only the top 100 similarity scores
+#     top_100_similarity_scores = similarity_scores[:100]
 
-    print("similar scores", top_100_similarity_scores)
-    df = pd.read_csv("./finalDatas_embeddings.csv", index_col=0)
+#     print("similar scores", top_100_similarity_scores)
+#     df = pd.read_csv("./finalDatas_embeddings.csv", index_col=0)
 
-    # Supprimer les lignes qui ne font pas partie des top 100 scores similaires
-    top_100_images = [score[1] for score in top_100_similarity_scores]
-    df_top_100 = df[df["URL"].isin(top_100_images)]
+#     # Supprimer les lignes qui ne font pas partie des top 100 scores similaires
+#     top_100_images = [score[1] for score in top_100_similarity_scores]
+#     df_top_100 = df[df["URL"].isin(top_100_images)]
 
-    # Ajouter une nouvelle colonne "cosine_similarity" au DataFrame
-    df_top_100["cosine_similarity"] = [score[0] for score in top_100_similarity_scores]
-    # Afficher le DataFrame résultant
-    print(df_top_100)
+#     # Ajouter une nouvelle colonne "cosine_similarity" au DataFrame
+#     df_top_100["cosine_similarity"] = [score[0] for score in top_100_similarity_scores]
+#     # Afficher le DataFrame résultant
+#     print(df_top_100)
 
-    return df_top_100.reset_index().to_json(force_ascii=False, orient="records")
+#     return df_top_100.reset_index().to_json(force_ascii=False, orient="records")
 
 
 get_housing_from_first_image()
